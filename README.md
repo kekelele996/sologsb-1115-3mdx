@@ -63,7 +63,7 @@ sologsb-1115/
 │   ├── public/favicon.svg
 │   └── src/
 │       ├── types/              # specimen.ts / site.ts / storage.ts / determination.ts / index.ts
-│       ├── stores/             # specimenStore / siteStore / storageStore / determinationStore（Zustand）
+│       ├── stores/             # specimenStore / siteStore / storageStore / determinationStore / transferStore（Zustand）
 │       ├── components/common/  # SpecimenCard / StatusTag / CabinetGrid / SitePicker
 │       ├── hooks/              # usePersistentStore / useSpecimenFilter
 │       ├── pages/              # SpecimensPage / SitesPage / CollectPage / DeterminationPage / StoragePage
@@ -78,10 +78,12 @@ sologsb-1115/
 | Specimen 标本 | 编号、目/科/属/种、暂定名、采集日期与人、性别虫态、体长、采集方式、数量、鉴定状态 | `specimens` |
 | CollectSite 采集地 | 代码、名称、行政区、经纬度海拔、生境类型、小生境、微气候、采集日期区间 | `sites` |
 | Storage 保藏位置 | 保藏方式、柜/抽屉/盒/插位序号、入柜日期、经手人 | `storages` |
+| StorageTransfer 调拨记录 | 调拨前后柜位、调拨日期、经手人（关联同一条保藏位置） | `transfers` |
 | Determination 鉴定记录 | 鉴定人、日期、结论（学名）、依据文献、置信度、是否需复核 | `determinations` |
 
 - 数据库名 `gbinsectlog`，`meta` 表保存 `schemaVersion`；
 - `version(2)` 升级迁移会为历史标本补齐默认采集方式（扫网）；
+- `version(3)` 新增柜位调拨记录表，既有柜位明细原样保留；
 - 标本编号规则：`采集地代码-年份-流水号`（如 `QLB-2026-0007`），提交时自动分配并查重；
 - 数据仅存于浏览器本地，容器无状态、不挂载命名卷。
 
@@ -93,11 +95,12 @@ sologsb-1115/
 | `/collect` | 采集登记：选择采集地后自动带出生境/小生境/微气候，一次提交多条同批次标本，编号自动生成并查重 |
 | `/sites` | 采集地管理：经纬度格式校验、各地采集次数统计、50 米内邻近采集地提示与一键合并 |
 | `/determination` | 鉴定工作流：待鉴定队列逐条处理，落鉴定记录并自动推进标本状态（已鉴定 / 待复核） |
-| `/storage` | 保藏柜位图：柜-抽屉-盒-位三级展开，空位/占用一目了然，拖拽入柜，重复占用给出占用提示 |
+| `/storage` | 保藏柜位图：柜-抽屉-盒-位三级展开，空位/占用一目了然，拖拽入柜，重复占用给出占用提示；插位明细内可直接调拨换柜并留痕 |
 
 ## 七、业务约定
 
 - 采集地代码是标本编号前缀，代码重复会被拒绝；
 - 坐标 50 米内视为同一采集地，页面上给出合并提示，合并会把原采集地标本自动改挂；
 - 鉴定记录提交后自动把标本状态推进为「已鉴定」，勾选「需复核」则置为「待复核」；
-- 同一柜位（柜-屉-盒-位）只允许一份标本，冲突时列出已有标本编号。
+- 同一柜位（柜-屉-盒-位）只允许一份标本，冲突时列出已有标本编号；
+- 调拨在插位明细内一步完成：选定新柜位并填经手人后，原位置立即释放、新位置转为占用，同时落一条调拨记录（前后柜位、日期、经手人）；目标插位被占用则整体不执行，原位置不会先空掉。
