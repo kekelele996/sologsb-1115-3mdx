@@ -1,4 +1,4 @@
-import type { Specimen, Storage } from '@/types'
+import type { Specimen, Storage, Transfer } from '@/types'
 
 /** 标本编号：采集地代码-年份-流水号，如 QLB-2026-0007 */
 export function buildSpecimenCode(siteCode: string, year: number | string, serial: number): string {
@@ -79,6 +79,13 @@ export function storageSlotText(storage: Storage): string {
 export function findSlotConflicts(storages: Storage[], target: Storage): Storage[] {
   const key = storageSlotText(target)
   return storages.filter((item) => item.id !== target.id && storageSlotText(item) === key)
+}
+
+/** 调拨路径文本：C01-D1-B02-S03 → C02-D1-B01-S04 */
+export function transferRouteText(transfer: Transfer): string {
+  const from = encodeSlot(transfer.fromCabinet, transfer.fromDrawer, transfer.fromBox, transfer.fromSlot)
+  const to = encodeSlot(transfer.toCabinet, transfer.toDrawer, transfer.toBox, transfer.toSlot)
+  return `${from} → ${to}`
 }
 
 /** 标本摘要文本 */
